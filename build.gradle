@@ -1,0 +1,89 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version "$kotlinVersion"
+    id 'com.google.devtools.ksp' version "$kspVersion"
+    id 'org.jmailen.kotlinter' version "$kotlinterVersion"
+    id 'io.gitlab.arturbosch.detekt' version "$detektVersion"
+    id 'jacoco'
+}
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    ktlint
+}
+
+dependencies {
+    ktlint("com.pinterest.ktlint:ktlint-cli:$ktlintVersion") {
+        attributes {
+            attribute(Bundling.BUNDLING_ATTRIBUTE, getObjects().named(Bundling, Bundling.EXTERNAL))
+        }
+    }
+
+    implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
+    implementation "com.google.devtools.ksp:symbol-processing-api:$kspVersion"
+    implementation "jakarta.persistence:jakarta.persistence-api:$persistenceApiVersion"
+
+    testImplementation 'io.kotest:kotest-runner-junit5:' + kotestVersion
+    testImplementation 'io.kotest:kotest-assertions-core:' + kotestVersion
+    testImplementation 'io.kotest:kotest-property:' + kotestVersion
+}
+
+group = 'io.iot-connects'
+version = '0.1'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = JavaVersion.VERSION_17
+    kotlinOptions.javaParameters = true
+}
+
+compileTestKotlin {
+    kotlinOptions.jvmTarget = JavaVersion.VERSION_17
+}
+
+test {
+    useJUnitPlatform()
+}
+
+jacoco {
+    toolVersion = "$jacocoVersion"
+}
+
+jacocoTestReport {
+    dependsOn(tasks.test)
+
+    reports {
+        xml.required = false
+        csv.required = false
+        html.required = true
+    }
+}
+
+tasks.register("ktlintCheck", JavaExec) {
+    group = "verification"
+    description = "Check Kotlin code style."
+    classpath = configurations.ktlint
+    mainClass = "com.pinterest.ktlint.Main"
+    // see https://pinterest.github.io/ktlint/install/cli/#command-line-usage for more information
+    args "src/**/*.kt", "**.kts", "!**/build/**"
+}
+
+tasks.named("check") {
+    dependsOn tasks.named("ktlintCheck")
+}
+
+tasks.register("ktlintFormat", JavaExec) {
+    group = "formatting"
+    description = "Fix Kotlin code style deviations."
+    classpath = configurations.ktlint
+    mainClass = "com.pinterest.ktlint.Main"
+    jvmArgs "--add-opens=java.base/java.lang=ALL-UNNAMED"
+    // see https://pinterest.github.io/ktlint/install/cli/#command-line-usage for more information
+    args "-F", "src/**/*.kt", "**.kts", "!**/build/**"
+}
