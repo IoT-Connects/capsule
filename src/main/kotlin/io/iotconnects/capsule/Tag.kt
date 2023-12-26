@@ -5,4 +5,4 @@ package io.iotconnects.capsule
  */
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class Tag(val name: String = "", val length: Int = Int.SIZE_BYTES)
+annotation class Tag(val name: String = "", val length: Int = 255)
