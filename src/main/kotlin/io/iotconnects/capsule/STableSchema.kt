@@ -74,6 +74,15 @@ class STableSchema(entityClass: KClass<out Any>) {
     }
 
     /**
+     * Generates the SQL statement for describing the super table.
+     */
+    fun describe(): String {
+        return """
+            |DESCRIBE $stableName;
+            """.trimMargin()
+    }
+
+    /**
      * Generates the SQL statement for dropping the super table.
      */
     fun drop(): String {
