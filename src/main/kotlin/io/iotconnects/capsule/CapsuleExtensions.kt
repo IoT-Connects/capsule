@@ -1,12 +1,10 @@
 package io.iotconnects.capsule
 
 import jakarta.persistence.Column
-import jakarta.persistence.EnumType
-import jakarta.persistence.Enumerated
-import java.sql.Timestamp
-import java.time.Instant
+import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 import kotlin.reflect.full.findAnnotation
+import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.jvm.javaField
 
 object CapsuleExtensions {
@@ -19,28 +17,14 @@ object CapsuleExtensions {
         }
     }
 
-    fun KProperty<*>.columnType(): String {
+    fun KProperty<*>.columnType(dataTypes: Map<KClass<out Any>, Type>): String {
         val column = this.column()
+        val returnType = this.returnType.classifier!! as KClass<out Any>
+        val dataType = returnType.dataType(dataTypes)
 
-        val enumerated = this.javaField!!.getAnnotation(Enumerated::class.java)
-        if (enumerated != null) {
-            return when (enumerated.value) {
-                EnumType.ORDINAL -> "TINYINT UNSIGNED"
-                EnumType.STRING -> "NCHAR(${column.length})"
-            }
-        }
-
-        return when (this.returnType.classifier) {
-            Timestamp::class, Instant::class -> "TIMESTAMP"
-            String::class -> "NCHAR(${column.length})"
-            Boolean::class -> "BOOL"
-            Int::class -> "INT"
-            UInt::class -> "INT UNSIGNED"
-            Long::class -> "BIGINT"
-            ULong::class -> "BIGINT UNSIGNED"
-            Float::class -> "FLOAT"
-            Double::class -> "DOUBLE"
-            else -> throw CapsuleExceptions("Unsupported type of column - ${this.returnType}!")
+        return when (returnType) {
+            String::class -> "${dataType.definition()}(${column.length})"
+            else -> dataType.definition()
         }
     }
 
@@ -53,28 +37,24 @@ object CapsuleExtensions {
         }
     }
 
-    fun KProperty<*>.tagType(): String {
+    fun KProperty<*>.tagType(dataTypes: Map<KClass<out Any>, Type>): String {
         val tag = this.tag()
+        val returnType = this.returnType.classifier!! as KClass<out Any>
+        val dataType = returnType.dataType(dataTypes)
 
-        val enumerated = this.javaField!!.getAnnotation(Enumerated::class.java)
-        if (enumerated != null) {
-            return when (enumerated.value) {
-                EnumType.ORDINAL -> "TINYINT UNSIGNED"
-                EnumType.STRING -> "NCHAR(${tag.length})"
-            }
+        return when (returnType) {
+            String::class -> "${dataType.definition()}(${tag.length})"
+            else -> dataType.definition()
         }
+    }
 
-        return when (this.returnType.classifier) {
-            Timestamp::class, Instant::class -> "TIMESTAMP"
-            String::class -> "NCHAR(${tag.length})"
-            Boolean::class -> "BOOL"
-            Int::class -> "INT"
-            UInt::class -> "INT UNSIGNED"
-            Long::class -> "BIGINT"
-            ULong::class -> "BIGINT UNSIGNED"
-            Float::class -> "FLOAT"
-            Double::class -> "DOUBLE"
-            else -> throw CapsuleExceptions("Unsupported type of tag - ${this.returnType}!")
+    private fun KClass<out Any>.dataType(dataTypes: Map<KClass<out Any>, Type>): Type {
+        return if (this.isSubclassOf(Enum::class)) {
+            dataTypes[Enum::class]!!
+        } else {
+            dataTypes.getOrElse(this) {
+                throw CapsuleExceptions("Unsupported type of data - $this!")
+            }
         }
     }
 
