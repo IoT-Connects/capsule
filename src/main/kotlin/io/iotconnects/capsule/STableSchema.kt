@@ -17,15 +17,18 @@ import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.javaField
 
-class STableSchema(entityClass: KClass<out Any>) {
-    private var entityName: String = entityClass.simpleName!!
+/**
+ * The schema of a super table from the entity class.
+ */
+class STableSchema(entityClass: KClass<out Any>, private val dataTypes: Map<KClass<out Any>, Type>) {
+    var entityName: String = entityClass.simpleName!!
+
     private var stableName: String
+    private var columns = mutableListOf<KProperty<*>>()
+    private var tags = mutableListOf<KProperty<*>>()
 
     private val idClassifiers = setOf(Timestamp::class, Instant::class)
     private lateinit var id: KProperty<*>
-
-    private var columns = mutableListOf<KProperty<*>>()
-    private var tags = mutableListOf<KProperty<*>>()
 
     init {
         if (!entityClass.hasAnnotation<Entity>()) {
@@ -65,10 +68,10 @@ class STableSchema(entityClass: KClass<out Any>) {
     fun create(): String {
         return """
             |CREATE STABLE IF NOT EXISTS $stableName (
-            |    ${id.name} TIMESTAMP,
-            |${columns.joinToString(",\n") { "    ${it.columnName()} ${it.columnType()}" }}
+            |    ${id.name} ${id.columnType(dataTypes)},
+            |${columns.joinToString(",\n") { "    ${it.columnName()} ${it.columnType(dataTypes)}" }}
             |) TAGS (
-            |${tags.joinToString(",\n") { "    ${it.tagName()} ${it.tagType()}" }}
+            |${tags.joinToString(",\n") { "    ${it.tagName()} ${it.tagType(dataTypes)}" }}
             |);
             """.trimMargin()
     }

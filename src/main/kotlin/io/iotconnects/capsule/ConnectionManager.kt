@@ -4,13 +4,13 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import jakarta.annotation.PostConstruct
 import jakarta.annotation.PreDestroy
-import jakarta.enterprise.context.ApplicationScoped
+import jakarta.inject.Singleton
 import java.sql.Connection
 
 /**
  * The JDBC connection manager for TDengine.
  */
-@ApplicationScoped
+@Singleton
 class ConnectionManager {
     private val jdbcUrl = System.getProperty("tdengine.jdbc.url", "jdbc:TAOS-RS://localhost:6041/power")
     private val username = System.getProperty("tdengine.jdbc.user", "root")
