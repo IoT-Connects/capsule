@@ -1,4 +1,4 @@
-package io.iotconnects.capsule
+package io.github.ipaddicting.capsule
 
 import io.kotest.core.annotation.AutoScan
 import io.kotest.core.listeners.AfterProjectListener
@@ -23,7 +23,7 @@ object TestProjectListener : BeforeProjectListener, AfterProjectListener {
             Timestamp::class to TimestampType(),
             Instant::class to InstantType(),
         )
-    val testingSchema = STableSchema(Meter::class, dataTypes)
+    val testingQuery = CapsuleQuery(Meter::class, dataTypes)
     val connectionManager = ConnectionManager()
 
     override suspend fun beforeProject() {

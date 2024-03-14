@@ -1,4 +1,4 @@
-package io.iotconnects.capsule
+package io.github.ipaddicting.capsule
 
 /**
  * Specifies the mapped tag for a persistent property or field.

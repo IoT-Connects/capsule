@@ -1,4 +1,4 @@
-package io.iotconnects.capsule
+package io.github.ipaddicting.capsule
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -7,7 +7,7 @@ import jakarta.persistence.Table
 
 @Entity(name = "meter")
 @Table(name = "meters")
-class Meter : TimeseriesEntity() {
+class Meter : CapsuleEntity() {
     @Column
     var current: Float = 0.0f
 

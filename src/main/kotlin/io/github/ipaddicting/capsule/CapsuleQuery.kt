@@ -1,9 +1,11 @@
-package io.iotconnects.capsule
+package io.github.ipaddicting.capsule
 
-import io.iotconnects.capsule.CapsuleExtensions.columnName
-import io.iotconnects.capsule.CapsuleExtensions.columnType
-import io.iotconnects.capsule.CapsuleExtensions.tagName
-import io.iotconnects.capsule.CapsuleExtensions.tagType
+import io.github.ipaddicting.capsule.CapsuleExtensions.asCommaSeparatedString
+import io.github.ipaddicting.capsule.CapsuleExtensions.asTupleString
+import io.github.ipaddicting.capsule.CapsuleExtensions.columnName
+import io.github.ipaddicting.capsule.CapsuleExtensions.columnType
+import io.github.ipaddicting.capsule.CapsuleExtensions.tagName
+import io.github.ipaddicting.capsule.CapsuleExtensions.tagType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
@@ -18,14 +20,13 @@ import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.javaField
 
 /**
- * The schema of a super table from the entity class.
+ * The query holder of a super table from the entity class.
  */
-class STableSchema(entityClass: KClass<out Any>, private val dataTypes: Map<KClass<out Any>, Type>) {
+class CapsuleQuery(entityClass: KClass<out Any>, private val dataTypes: Map<KClass<out Any>, Type>) {
     var entityName: String = entityClass.simpleName!!
-
-    private var stableName: String
-    private var columns = mutableListOf<KProperty<*>>()
-    private var tags = mutableListOf<KProperty<*>>()
+    var stableName: String
+    var columns = mutableListOf<KProperty<*>>()
+    var tags = mutableListOf<KProperty<*>>()
 
     private val idClassifiers = setOf(Timestamp::class, Instant::class)
     private lateinit var id: KProperty<*>
@@ -77,11 +78,67 @@ class STableSchema(entityClass: KClass<out Any>, private val dataTypes: Map<KCla
     }
 
     /**
+     * Generates the SQL statement for creating a table from the super table.
+     */
+    fun createTable(
+        name: String,
+        tagValues: Array<*>,
+    ): String {
+        return """
+            |CREATE TABLE ${stableName}_$name 
+            |USING $stableName 
+            |TAGS (${tagValues.asCommaSeparatedString()})
+            """.trimMargin()
+    }
+
+    /**
      * Generates the SQL statement for describing the super table.
      */
     fun describe(): String {
         return """
             |DESCRIBE $stableName;
+            """.trimMargin()
+    }
+
+    /**
+     * Generates the SQL statement for inserting a row into the super table or a table.
+     */
+    fun insert(records: Map<String, List<CapsuleEntity>>): String {
+        val values =
+            records.map { (tableName, rows) ->
+                "${stableName}_$tableName VALUES ${rows.joinToString("") { it.asTupleString() }}"
+            }.joinToString(" \n")
+
+        return """
+            |INSERT INTO 
+            |$values;
+            """.trimMargin()
+    }
+
+    /**
+     * Generates the SQL statement for counting the rows of the super table or a table.
+     */
+    fun count(name: String = ""): String {
+        return """
+            |SELECT COUNT(*) FROM ${stableName}${ if (name.isNotEmpty()) "_$name" else "" };
+            """.trimMargin()
+    }
+
+    /**
+     * Generates the SQL statement for selecting the last row of the super table or a table.
+     */
+    fun lastRow(name: String = ""): String {
+        return """
+            |SELECT LAST_ROW(*) FROM ${stableName}${ if (name.isNotEmpty()) "_$name" else "" };
+            """.trimMargin()
+    }
+
+    /**
+     * Generates the SQL statement for dropping a table.
+     */
+    fun dropTable(name: String): String {
+        return """
+            |DROP TABLE IF EXISTS ${stableName}_$name;
             """.trimMargin()
     }
 

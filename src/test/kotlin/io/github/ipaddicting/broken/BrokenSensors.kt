@@ -1,4 +1,4 @@
-package io.iotconnects.capsule
+package io.github.ipaddicting.broken
 
 import jakarta.persistence.Entity
 import jakarta.persistence.Id

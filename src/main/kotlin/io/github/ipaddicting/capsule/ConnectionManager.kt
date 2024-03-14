@@ -1,4 +1,4 @@
-package io.iotconnects.capsule
+package io.github.ipaddicting.capsule
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
