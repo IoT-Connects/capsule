@@ -1,4 +1,4 @@
-package io.iotconnects.capsule
+package io.github.ipaddicting.capsule
 
 import jakarta.inject.Singleton
 import java.sql.Timestamp
